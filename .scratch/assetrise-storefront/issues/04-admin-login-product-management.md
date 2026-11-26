@@ -25,3 +25,5 @@
 - **2026-11-26** — Fixed a boot bug: `js/admin.js` defined `mountAdmin` but never called it, so the page sat on "Loading the CMS". The module now mounts itself when the admin skeleton is present; `tests/ui/admin-boot.test.js` guards the regression.
 
 - **2026-11-26** — Fixed image field rejecting local paths: the input was `type="url"`, so native browser validation blocked relative paths (e.g. `image/chicken 2.jpg`) before app validation. The field is now a text input with `inputmode="url"` and `novalidate` on the dialog form; relative, absolute, and remote URLs are all accepted.
+
+- **2026-11-26** — Fixed Add/Save doing nothing: the `method="dialog"` submit handler gated saving on `dialog.returnValue`, which browsers only set after submit. The form now always intercepts submit and saves explicitly; Cancel is a plain button that closes. Covered by a regression test that submits with the default empty `returnValue`, verified to fail before the fix.
