@@ -1,0 +1,16 @@
+{
+  "name": "feedmill-farms-storefront-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Frontend-first Feedmill Farms storefront concept demo.",
+  "scripts": {
+    "serve": "python3 -m http.server 8000",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "jsdom": "^31.0.1",
+    "vitest": "^5.1.2"
+  }
+}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Temporary 5 litre palm oil placeholder image">
+  <rect width="800" height="600" fill="#efe5d3"/>
+  <circle cx="400" cy="280" r="190" fill="#e4d4b8"/>
+
+  <rect x="338" y="104" width="124" height="60" rx="10" fill="#1f3d2b"/>
+  <path d="M320 164 h160 l30 300 a18 18 0 0 1 -18 20 h-184 a18 18 0 0 1 -18 -20 z" fill="#a63d2f"/>
+  <path d="M342 164 h38 l-16 320 h-32 z" fill="#c05a45" opacity="0.55"/>
+
+  <rect x="326" y="284" width="148" height="126" rx="10" fill="#f8f2e7"/>
+  <text x="400" y="342" text-anchor="middle" font-family="Georgia, serif" font-size="48" font-weight="600" fill="#1f3d2b">5L</text>
+  <text x="400" y="382" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" letter-spacing="2" fill="#a63d2f">PALM OIL</text>
+
+  <text x="400" y="528" text-anchor="middle" font-family="Georgia, serif" font-size="30" font-weight="600" fill="#1f3d2b">5L Palm Oil</text>
+  <text x="400" y="562" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" letter-spacing="1.5" fill="#6b6a62">TEMPORARY IMAGE · FEEDMILL FARMS DEMO</text>
+</svg>
