@@ -163,6 +163,35 @@ describe('admin CMS', () => {
     expect(sessionStorage.getItem('feedmill:admin-auth')).toBeNull();
   });
 
+  it('saves the product on a plain submit, like a real browser', async () => {
+    // Browsers only set dialog.returnValue *after* the submit event, so the
+    // handler must not depend on it. Submitting with the default empty
+    // returnValue must still save.
+    const api = createMockApi();
+    const root = createFixture();
+    mountAdmin({ api, root });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await signIn(root);
+
+    root.querySelector('.admin-section-head .button').click();
+    const dialog = root.querySelector('[data-admin-dialog]');
+
+    dialog.querySelector('#product-name').value = 'Yam';
+    dialog.querySelector('#product-price').value = '3000';
+    dialog.querySelector('#product-unit').value = 'per tuber';
+    expect(dialog.returnValue ?? '').toBe('');
+
+    dialog.querySelector('.admin-form').dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const saved = (await api.listProducts()).find((p) => p.name === 'Yam');
+    expect(saved).toBeDefined();
+    expect(saved.price).toBe(3000);
+  });
+
   it('accepts local image paths in the product form', async () => {
     const api = createMockApi();
     const root = createFixture();

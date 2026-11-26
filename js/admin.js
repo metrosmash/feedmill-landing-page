@@ -466,7 +466,15 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
       h(
         'div',
         { class: 'admin-dialog__actions' },
-        h('button', { type: 'submit', value: 'cancel', class: 'button button--ghost', text: 'Cancel' }),
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'button button--ghost',
+            text: 'Cancel',
+            onclick: () => closeDialog(),
+          },
+        ),
         h('button', {
           type: 'submit',
           value: 'save',
@@ -494,10 +502,11 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
     inputs.name.focus();
 
     form.addEventListener('submit', (event) => {
-      if (dialog.returnValue === 'save') {
-        event.preventDefault();
-        saveProduct();
-      }
+      // method="dialog" would close the dialog natively; always intercept so
+      // validation errors keep it open and saving is explicit. returnValue is
+      // only set *after* submit in real browsers, so it cannot gate saving.
+      event.preventDefault();
+      saveProduct();
     });
 
     async function saveProduct() {
