@@ -21,3 +21,5 @@
 ## Comments
 
 - **2026-11-26** — Implemented in `5b6039b`. `admin.html` is now the full CMS: `feedmill2026` demo-only login gate with session-scoped persistence and Log out, Products/Orders/Settings tabs (Settings is a placeholder until ticket 07). Products tab lists image/name/price/unit/availability with add (slugged unique id), edit, delete (accessible `<dialog>` confirmation, snapshots intact), live image-URL preview with broken-link fallback, and one-click sold-out toggle reflected immediately via shared localStorage. Persistent demo-mode notice; mobile-friendly and keyboard-accessible. Tests: login gate, CRUD, toggle, preview, exports surface, and session handling.
+
+- **2026-11-26** — Fixed a boot bug: `js/admin.js` defined `mountAdmin` but never called it, so the page sat on "Loading the CMS". The module now mounts itself when the admin skeleton is present; `tests/ui/admin-boot.test.js` guards the regression.
