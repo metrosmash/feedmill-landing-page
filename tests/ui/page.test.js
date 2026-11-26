@@ -31,6 +31,7 @@ describe('static page shell', () => {
     expect(document.querySelector('.trust')).not.toBeNull();
     expect(document.querySelector('.shop')).not.toBeNull();
     expect(document.querySelector('[data-product-grid]')).not.toBeNull();
+    expect(document.querySelector('[data-order-summary]')).not.toBeNull();
     expect(document.querySelector('a[href="admin.html"]')).not.toBeNull();
   });
 

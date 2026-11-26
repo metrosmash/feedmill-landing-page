@@ -36,7 +36,13 @@ grid, the shell settings wiring, and the static page shell.
 - Neutral storefront shell: header, hero, trust strip, product grid, footer,
   `noindex`, and the "independent concept demo" notice.
 - Five seeded products: Turkey, Broiler Chicken, Garri, 3L Palm Oil, and 5L
-  Palm Oil. Garri is seeded sold out.
+  Palm Oil. Garri is seeded sold out with a diagonal ribbon and disabled
+  controls.
+- Accessible quantity steppers on every available product, bounded from 0 to
+  99, with zero removing the item.
+- A live order summary with line items, subtotal, pickup/delivery choice, the
+  configured delivery fee, and total. It is a sticky sidebar on desktop and a
+  bottom sheet on mobile.
 - Versioned seed settings for brand, contact, bank, delivery, and digest.
 - A single `Api` adapter with a `MockApi` implementation backed by
   `localStorage`, plus the documented future HTTP contract in

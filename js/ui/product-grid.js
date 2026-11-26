@@ -1,10 +1,63 @@
+import {
+  MAX_QUANTITY,
+  MIN_QUANTITY,
+} from '../domain/cart.js';
 import { formatNgn } from '../domain/money.js';
 import { h } from './dom.js';
 
 /**
  * @param {import('../api/types.js').Product} product
+ * @param {number} [quantity]
+ * @param {{ soldOut?: boolean }} [options]
  */
-export function createProductCard(product) {
+export function createStepper(product, quantity = 0, { soldOut = false } = {}) {
+  return h(
+    'div',
+    {
+      class: `qty${soldOut ? ' qty--disabled' : ''}`,
+      role: 'group',
+      'aria-label': `${product.name} quantity`,
+    },
+    h(
+      'button',
+      {
+        type: 'button',
+        class: 'qty__button',
+        'data-qty-action': 'decrease',
+        'aria-label': `Decrease quantity of ${product.name}`,
+        disabled: soldOut || quantity <= MIN_QUANTITY,
+      },
+      '−',
+    ),
+    h(
+      'span',
+      {
+        class: 'qty__value',
+        'data-qty-value': '',
+        'aria-live': 'polite',
+        'aria-atomic': 'true',
+      },
+      String(quantity),
+    ),
+    h(
+      'button',
+      {
+        type: 'button',
+        class: 'qty__button',
+        'data-qty-action': 'increase',
+        'aria-label': `Increase quantity of ${product.name}`,
+        disabled: soldOut || quantity >= MAX_QUANTITY,
+      },
+      '+',
+    ),
+  );
+}
+
+/**
+ * @param {import('../api/types.js').Product} product
+ * @param {{ quantity?: number }} [options]
+ */
+export function createProductCard(product, { quantity = 0 } = {}) {
   const soldOut = product.available === false;
 
   const media = h(
@@ -17,7 +70,7 @@ export function createProductCard(product) {
       decoding: 'async',
     }),
     soldOut
-      ? h('span', { class: 'product-card__badge', text: 'Sold out' })
+      ? h('span', { class: 'product-card__ribbon', text: 'SOLD OUT' })
       : null,
   );
 
@@ -27,6 +80,7 @@ export function createProductCard(product) {
       class: `product-card${soldOut ? ' product-card--sold-out' : ''}`,
       'data-product-id': product.id,
       'data-available': String(!soldOut),
+      'data-quantity': String(quantity),
     },
     media,
     h(
@@ -40,6 +94,7 @@ export function createProductCard(product) {
         h('span', { class: 'product-card__unit', text: product.unit }),
         h('span', { class: 'product-card__price', text: formatNgn(product.price) }),
       ),
+      createStepper(product, quantity, { soldOut }),
     ),
   );
 }
@@ -49,8 +104,9 @@ export function createProductCard(product) {
  *
  * @param {Array<import('../api/types.js').Product>} products
  * @param {HTMLElement} container
+ * @param {Record<string, number>} [quantities]
  */
-export function renderProductGrid(products, container) {
+export function renderProductGrid(products, container, quantities = {}) {
   container.replaceChildren();
 
   if (!products.length) {
@@ -64,6 +120,42 @@ export function renderProductGrid(products, container) {
   }
 
   const fragment = document.createDocumentFragment();
-  products.forEach((product) => fragment.append(createProductCard(product)));
+  products.forEach((product) => {
+    fragment.append(
+      createProductCard(product, { quantity: quantities[product.id] ?? 0 }),
+    );
+  });
   container.append(fragment);
+}
+
+/**
+ * Update existing cards in place. This keeps focus on a stepper button while
+ * the summary re-renders, instead of rebuilding the grid on every click.
+ *
+ * @param {Array<import('../api/types.js').Product>} products
+ * @param {HTMLElement} container
+ * @param {Record<string, number>} [quantities]
+ */
+export function syncProductGrid(products, container, quantities = {}) {
+  const byId = new Map(products.map((product) => [product.id, product]));
+
+  container.querySelectorAll('[data-product-id]').forEach((card) => {
+    const product = byId.get(card.dataset.productId);
+    if (!product) return;
+
+    const soldOut = product.available === false;
+    const quantity = quantities[product.id] ?? 0;
+    const value = card.querySelector('[data-qty-value]');
+    const decrease = card.querySelector('[data-qty-action="decrease"]');
+    const increase = card.querySelector('[data-qty-action="increase"]');
+    const stepper = card.querySelector('.qty');
+
+    if (value) value.textContent = String(quantity);
+    if (decrease) decrease.disabled = soldOut || quantity <= MIN_QUANTITY;
+    if (increase) increase.disabled = soldOut || quantity >= MAX_QUANTITY;
+    if (stepper) stepper.classList.toggle('qty--disabled', soldOut);
+
+    card.dataset.quantity = String(quantity);
+    card.classList.toggle('product-card--in-cart', quantity > 0 && !soldOut);
+  });
 }
