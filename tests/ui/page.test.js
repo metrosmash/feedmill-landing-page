@@ -48,5 +48,6 @@ describe('static page shell', () => {
     expect(document.querySelector('[data-admin-login]')).not.toBeNull();
     expect(document.querySelector('[data-admin-panel="products"]')).not.toBeNull();
     expect(document.querySelector('[data-admin-panel="orders"]')).not.toBeNull();
+    expect(document.querySelector('[data-admin-panel="digest"]')).not.toBeNull();
   });
 });

@@ -68,6 +68,7 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
   const panels = {
     products: root.querySelector('[data-admin-panel="products"]'),
     orders: root.querySelector('[data-admin-panel="orders"]'),
+    digest: root.querySelector('[data-admin-panel="digest"]'),
     settings: root.querySelector('[data-admin-panel="settings"]'),
   };
   const tabs = [...root.querySelectorAll('[data-admin-tab]')];
@@ -78,6 +79,8 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
     products: [],
     orders: [],
     settings: null,
+    digestPreview: null,
+    digestNotice: '',
     loginError: '',
     notice: '',
     settingsNotice: '',
@@ -202,10 +205,12 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
     }
     panels.products.hidden = state.tab !== 'products';
     panels.orders.hidden = state.tab !== 'orders';
+    panels.digest.hidden = state.tab !== 'digest';
     panels.settings.hidden = state.tab !== 'settings';
 
     renderProducts();
     renderOrders();
+    renderDigest();
     renderSettings();
   }
 
@@ -662,6 +667,101 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
           h('tbody', {}, ...rows),
         ),
       ),
+    );
+  }
+
+  // Digest -------------------------------------------------------------
+
+  function renderDigest() {
+    const preview = state.digestPreview;
+
+    const orderRows = (preview?.orders ?? []).map((order) =>
+      h(
+        'li',
+        { class: 'digest-order' },
+        h('p', { class: 'digest-order__head' }, `${order.id} — ${order.customer.name}`),
+        h(
+          'p',
+          { class: 'digest-order__meta' },
+          `${summariseItems(order.items)} · ${formatNgn(order.total)} · ${order.fulfilment} · ${order.status}`,
+        ),
+      ),
+    );
+
+    panels.digest.replaceChildren(
+      h(
+        'div',
+        { class: 'admin-section-head' },
+        h('h2', { text: 'Daily digest' }),
+      ),
+      h(
+        'p',
+        { class: 'field-hint', text: 'A preview of the end-of-day email: every order placed since the last digest. Demo only — no email is sent.' },
+      ),
+      h(
+        'div',
+        { class: 'admin-exports' },
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'button button--ghost',
+            onclick: async () => {
+              state.digestPreview = await api.getDigestPreview();
+              state.digestNotice = '';
+              render();
+            },
+          },
+          'Preview digest',
+        ),
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'button button--primary',
+            onclick: async () => {
+              // "Send" opens the same preview first, then asks for confirmation.
+              state.digestPreview = await api.getDigestPreview();
+              state.digestNotice = '';
+              render();
+              const confirmed = await confirmAction({
+                title: 'Send digest now?',
+                message:
+                  state.digestPreview.orders.length === 0
+                    ? 'There are no new orders. Sending still records the digest time.'
+                    : `This marks ${state.digestPreview.orders.length} ${state.digestPreview.orders.length === 1 ? 'order' : 'orders'} as notified and updates the last-digest time. No email is sent in the demo.`,
+                confirmLabel: 'Send digest (demo)',
+              });
+              if (!confirmed) return;
+              const result = await api.sendDigestNow();
+              state.digestPreview = null;
+              state.digestNotice =
+                result.orderCount === 0
+                  ? `Digest recorded at ${result.sentAt}. No new orders — no email was sent.`
+                  : `Digest recorded at ${result.sentAt}: ${result.orderCount} ${result.orderCount === 1 ? 'order' : 'orders'} marked as notified. No email was sent.`;
+              await refresh();
+              render();
+            },
+          },
+          'Send digest now',
+        ),
+      ),
+      state.digestNotice
+        ? h('p', { class: 'admin-notice', role: 'status', text: state.digestNotice })
+        : null,
+      preview
+        ? h(
+            'div',
+            { class: 'digest-preview' },
+            h('h3', { text: 'Subject' }),
+            h('p', { class: 'digest-subject', text: preview.subject }),
+            h('h3', { text: 'Body' }),
+            h('pre', { class: 'digest-body', text: preview.body }),
+            preview.orders.length === 0
+              ? h('p', { class: 'empty-state', text: 'No new orders since the last digest.' })
+              : h('ul', { class: 'digest-orders' }, ...orderRows),
+          )
+        : h('p', { class: 'field-hint', text: 'Preview the digest to see what the email would contain.' }),
     );
   }
 

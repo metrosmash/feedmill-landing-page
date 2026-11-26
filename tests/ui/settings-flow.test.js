@@ -12,10 +12,12 @@ function createAdminFixture() {
       <div class="admin-tabs" role="tablist" aria-label="CMS sections">
         <button type="button" role="tab" data-admin-tab="products" aria-selected="true">Products</button>
         <button type="button" role="tab" data-admin-tab="orders" aria-selected="false">Orders</button>
+        <button type="button" role="tab" data-admin-tab="digest" aria-selected="false">Digest</button>
         <button type="button" role="tab" data-admin-tab="settings" aria-selected="false">Settings</button>
       </div>
       <section data-admin-panel="products" role="tabpanel" aria-label="Products"></section>
       <section data-admin-panel="orders" role="tabpanel" aria-label="Orders" hidden></section>
+      <section data-admin-panel="digest" role="tabpanel" aria-label="Digest" hidden></section>
       <section data-admin-panel="settings" role="tabpanel" aria-label="Settings" hidden></section>
     </div>
     <button type="button" data-admin-logout hidden>Log out</button>

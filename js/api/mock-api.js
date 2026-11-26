@@ -232,6 +232,62 @@ export function createMockApi({
       .join('; ');
   }
 
+  /**
+   * Shared digest selection so preview and send can never disagree.
+   */
+  function buildDigestPreview() {
+    const settings = readSettings();
+    const orders = readOrders();
+    const since = settings.lastDigestAt ?? null;
+
+    const included = orders
+      .filter(
+        (order) =>
+          order.notifiedAt == null &&
+          (since == null || String(order.createdAt) > since),
+      )
+      .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+
+    const total = included.reduce((sum, order) => sum + order.total, 0);
+    const dayLabel = now().toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    const subject =
+      `${settings.brandName} — orders for ${dayLabel} ` +
+      `(${included.length} ${included.length === 1 ? 'order' : 'orders'}, ${formatNgn(total)})`;
+
+    const lines = [
+      `Hello, here are the orders since ${since == null ? 'the beginning (first digest)' : since}.`,
+      '',
+    ];
+    for (const order of included) {
+      lines.push(
+        `${order.id} — ${order.customer.name} (${order.customer.phone})`,
+        `  Items: ${itemSummary(order.items)}`,
+        `  Total: ${formatNgn(order.total)} · ${order.fulfilment} · ${order.status}`,
+        '',
+      );
+    }
+    if (included.length === 0) {
+      lines.push('No new orders since the last digest.', '');
+    } else {
+      lines.push(
+        `Total across ${included.length} ${included.length === 1 ? 'order' : 'orders'}: ${formatNgn(total)}`,
+        '',
+      );
+    }
+    lines.push(`Digest recipient: ${settings.digestRecipient} at ${settings.digestTime}.`);
+
+    return {
+      subject,
+      body: lines.join('\n'),
+      orders: clone(included),
+      since,
+    };
+  }
+
   return {
     // Public read path (ticket 01).
     async getPublicSettings() {
@@ -639,8 +695,29 @@ export function createMockApi({
     },
 
     // Digest (ticket 08).
-    getDigestPreview: notImplemented('getDigestPreview'),
-    sendDigestNow: notImplemented('sendDigestNow'),
+    async getDigestPreview() {
+      return buildDigestPreview();
+    },
+
+    async sendDigestNow() {
+      // Same selection as the preview, so the two can never disagree.
+      const fresh = buildDigestPreview();
+      const sentAt = now().toISOString();
+
+      const settings = readSettings();
+      settings.lastDigestAt = sentAt;
+      writeSlice(STORAGE_KEYS.settings, settings);
+
+      if (fresh.orders.length > 0) {
+        const ids = new Set(fresh.orders.map((order) => order.id));
+        const orders = readOrders().map((order) =>
+          ids.has(order.id) ? { ...order, notifiedAt: sentAt } : order,
+        );
+        writeSlice(STORAGE_KEYS.orders, orders);
+      }
+
+      return { sentAt, orderCount: fresh.orders.length };
+    },
 
     // Demo lifecycle (ticket 09).
     resetDemo: notImplemented('resetDemo'),

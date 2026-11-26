@@ -13,10 +13,12 @@ describe('admin boot', () => {
         <div role="tablist" aria-label="CMS sections">
           <button type="button" role="tab" data-admin-tab="products">Products</button>
           <button type="button" role="tab" data-admin-tab="orders">Orders</button>
+          <button type="button" role="tab" data-admin-tab="digest">Digest</button>
           <button type="button" role="tab" data-admin-tab="settings">Settings</button>
         </div>
         <section data-admin-panel="products"></section>
         <section data-admin-panel="orders" hidden></section>
+        <section data-admin-panel="digest" hidden></section>
         <section data-admin-panel="settings" hidden></section>
       </div>
       <button type="button" data-admin-logout hidden>Log out</button>
