@@ -823,3 +823,9 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
 
   return { ready, state };
 }
+
+// Boot automatically on the real admin page, where the mount points exist.
+// (Imported for its exports in tests, where the skeleton is absent.)
+if (typeof document !== 'undefined' && document.querySelector('[data-admin-login]')) {
+  mountAdmin();
+}
