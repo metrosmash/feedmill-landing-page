@@ -19,6 +19,27 @@ python3 -m http.server 8000
 Then open <http://localhost:8000>. The demo also works on a phone on the same
 network.
 
+## Demo walkthrough
+
+**Customer** (`index.html`): browse the five seeded products (Garri starts
+sold out), set quantities with the steppers, pick pickup or delivery in the
+live order summary, fill the checkout form, and submit. The confirmation shows
+the order number, bank-transfer details, a WhatsApp button with a prefilled
+message, and pickup/delivery next steps. Refreshing re-shows the last
+confirmation.
+
+**Owner** (`admin.html` → CMS link in the header): sign in with the demo
+password `feedmill2026` (demo-only, session-scoped — not real security).
+Manage products (add, edit, delete, sold-out toggle, image preview), review
+orders in the spreadsheet-style table with a detail view, download JSON/CSV
+exports, preview and send the daily digest (demo-only, no email is sent), edit
+settings, and reset the demo.
+
+**Reset the demo**: Settings tab → “Reset demo data” (with confirmation).
+Orders are cleared and products/settings return to the seed. Garri is sold out
+again. Reset only touches `feedmill:`-namespaced keys; nothing else in the
+browser is affected.
+
 ## Tests
 
 Tests are a development-only dependency; the shipped app does not use them.
@@ -28,49 +49,46 @@ npm install
 npm test
 ```
 
-The suite covers the `Api` contract for the public read path, the storefront
-grid, the shell settings wiring, and the static page shell.
+The suite runs the `Api` contract against `MockApi` (products, settings,
+orders, exports, digest, reset), validation rules, and storefront/admin UI
+flows in jsdom. Manually verify the full customer and admin flows end to end
+at a phone-sized viewport before a pitch; the main flows should produce no
+console errors.
 
-## What is built so far
+## Demo data and storage
 
-- Neutral storefront shell: header, hero, trust strip, product grid, footer,
-  `noindex`, and the "independent concept demo" notice.
-- Five seeded products: Turkey, Broiler Chicken, Garri, 3L Palm Oil, and 5L
-  Palm Oil. Garri is seeded sold out with a diagonal ribbon and disabled
-  controls.
-- Accessible quantity steppers on every available product, bounded from 0 to
-  99, with zero removing the item.
-- A live order summary with line items, subtotal, pickup/delivery choice, the
-  configured delivery fee, and total. It is a sticky sidebar on desktop and a
-  bottom sheet on mobile.
-- Versioned seed settings for brand, contact, bank, delivery, and digest.
-- A single `Api` adapter with a `MockApi` implementation backed by
-  `localStorage`, plus the documented future HTTP contract in
-  [`docs/api-contract.md`](docs/api-contract.md).
-- Google-Form-style checkout with inline validation, adapter-side pricing,
-  order numbers (`FF-YYYYMMDD-NNN`), and a confirmation with bank-transfer
-  details and a WhatsApp button. Selections survive validation errors, and a
-  sold-out race shows a named banner and corrects the cart.
-- Owner CMS at `admin.html`: demo login (`feedmill2026`, session-scoped),
-  product add/edit/delete with image preview, sold-out toggle, an
-  orders table with detail view and status/payment editors, and JSON/CSV
-  exports. Destructive actions ask for confirmation in an accessible dialog.
-- Settings tab with validated brand, contact, bank, delivery-fee, and digest
-  fields; the storefront picks up saves live, including across open tabs.
-  Past orders keep their snapshots when fees change.
-- Temporary SVG placeholders for Turkey and both palm oils. Licensed stock
-  photos and credits arrive in the final packaging ticket.
+`MockApi` persists versioned slices to `feedmill:v1:products`,
+`feedmill:v1:settings`, and `feedmill:v1:orders` in the current browser. A
+missing, corrupt, or version-mismatched payload is reseeded from
+`js/data/seed.js`. Opening the storefront in another tab picks up CMS changes
+live via storage events.
 
-## Demo data
+## Asset credits
 
-`MockApi` persists to `feedmill:v1:products` and `feedmill:v1:settings` in the
-current browser. A missing, corrupt, or version-mismatched payload is reseeded
-from `js/data/seed.js`. Later tickets add orders, admin, exports, digest, and
-reset.
+Product photos for chicken and garri are local files already in the repo.
+Turkey and palm-oil photos are free-to-use stock, downloaded for offline use
+and **flagged for replacement with the client's own photos before any real
+use**:
 
-## Roadmap
+- Turkey — “Roast turkey from fall season” by Jim the Photographer, CC BY
+  (<https://commons.wikimedia.org/w/index.php?curid=85144466>),
+  stored at `image/stock/turkey.jpg`.
+- 3L Palm Oil — “Epo (red palm oil)” by 6th.quan, CC BY-SA
+  (<https://commons.wikimedia.org/w/index.php?curid=149079499>),
+  stored at `image/stock/palm-oil-3l.jpg`.
+- 5L Palm Oil — “Selling red palm oil in a market” by Minette Lontsie,
+  CC BY-SA (<https://commons.wikimedia.org/w/index.php?curid=63986402>),
+  stored at `image/stock/palm-oil-5l.jpg`.
 
-The implementation issues live under
-[`.scratch/assetrise-storefront/issues/`](.scratch/assetrise-storefront/issues/).
-The owner CMS, checkout, orders, exports, settings editing, digest preview, and
-demo reset arrive in tickets 03–10.
+`image/rice.jpg` is unused because rice is not in the catalogue.
+
+## What is deliberately deferred
+
+No real payments (bank transfer only; Paystack fields exist in the order
+schema), no real backend or hosting choice, no real email (digest is
+preview-only), no Google Sheets sync, no XLSX export, single demo password
+with no real auth, no inventory counts (availability is a boolean), no
+delivery zones, no customer accounts, and no legal or analytics pages. The
+API contract in [`docs/api-contract.md`](docs/api-contract.md) defines the
+future Flask or Node endpoints so the `HttpApi` can be built without touching
+the UI.

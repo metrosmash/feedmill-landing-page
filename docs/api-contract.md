@@ -1,7 +1,8 @@
 # API contract
 
-**Status:** v1 draft, established in ticket 01; order creation (03), admin
-auth and products (04), order management (05), and exports (06) implemented.
+**Status:** v1, complete through ticket 09: order creation (03), admin
+auth and products (04), order management (05), exports (06), settings
+writes (07), digest (08), and demo reset (09).
 **Adapter:** `js/api/mock-api.js` (demo), future `HttpApi`.
 **Schema version:** `1`.
 

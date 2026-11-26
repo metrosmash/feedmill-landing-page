@@ -37,7 +37,7 @@ describe('MockApi contract: public reads', () => {
       unit: 'per bird',
       available: true,
       sortOrder: 1,
-      imageUrl: 'image/placeholders/turkey.svg',
+      imageUrl: 'image/stock/turkey.jpg',
     });
     expect(typeof products[0].createdAt).toBe('string');
     expect(typeof products[0].updatedAt).toBe('string');
