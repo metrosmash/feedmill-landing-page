@@ -85,8 +85,7 @@ describe('admin CMS', () => {
     ).toContain('Sold out');
   });
 
-  it('previews the image URL live in the product form', async () => {
-    const root = createFixture();
+  it('previews the image URL live in the product form', async () => {    const root = createFixture();
     mountAdmin({ api: createMockApi(), root });
     await new Promise((resolve) => setTimeout(resolve, 0));
     await signIn(root);
@@ -162,5 +161,38 @@ describe('admin CMS', () => {
 
     expect(root.querySelector('[data-admin-app]').hidden).toBe(true);
     expect(sessionStorage.getItem('feedmill:admin-auth')).toBeNull();
+  });
+
+  it('accepts local image paths in the product form', async () => {
+    const api = createMockApi();
+    const root = createFixture();
+    mountAdmin({ api, root });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await signIn(root);
+
+    root.querySelector('.admin-section-head .button').click();
+    const dialog = root.querySelector('[data-admin-dialog]');
+    const urlInput = dialog.querySelector('#product-imageUrl');
+
+    // Native type=url inputs reject relative paths before app validation
+    // runs, so the field must stay a plain text input.
+    expect(urlInput.type).not.toBe('url');
+
+    dialog.querySelector('#product-name').value = 'Chicken 2';
+    dialog.querySelector('#product-price').value = '12000';
+    dialog.querySelector('#product-unit').value = 'per bird';
+    urlInput.value = 'image/chicken 2.jpg';
+    urlInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    dialog.returnValue = 'save';
+    dialog.querySelector('.admin-form').dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const saved = (await api.listProducts()).find((p) => p.name === 'Chicken 2');
+    expect(saved).toBeDefined();
+    expect(saved.imageUrl).toBe('image/chicken 2.jpg');
   });
 });

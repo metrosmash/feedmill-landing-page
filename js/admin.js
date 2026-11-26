@@ -417,7 +417,7 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
 
     const form = h(
       'form',
-      { method: 'dialog', class: 'admin-dialog__inner admin-form' },
+      { method: 'dialog', class: 'admin-dialog__inner admin-form', novalidate: true },
       h('h2', { id: 'admin-dialog-title', text: isEdit ? `Edit ${product.name}` : 'Add product' }),
       productField('name', 'Name', { type: 'text', required: true, maxlength: 80 }),
       h(
@@ -443,7 +443,12 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
       ),
       productField('price', 'Price (₦, whole naira)', { type: 'number', min: 1, step: 1, required: true }),
       productField('unit', 'Unit (e.g. per bird)', { type: 'text', required: true, maxlength: 20 }),
-      productField('imageUrl', 'Image URL', { type: 'url', placeholder: 'https://… or image/photo.jpg' }),
+      productField('imageUrl', 'Image URL or local path', {
+        type: 'text',
+        inputmode: 'url',
+        placeholder: 'https://… or image/chicken 2.jpg',
+        maxlength: 500,
+      }),
       h(
         'div',
         { class: 'field' },
