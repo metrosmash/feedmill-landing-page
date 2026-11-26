@@ -27,8 +27,11 @@ describe('static page shell', () => {
     const document = loadPage('index.html');
 
     expect(
-      document.querySelector('link[rel="icon"]').getAttribute('href'),
-    ).toBe('favicon.png');    expect(document.querySelector('.site-header')).not.toBeNull();
+      document.querySelector('link[rel="icon"][type="image/png"]').getAttribute('href'),
+    ).toBe('favicon.png');
+    expect(
+      document.querySelector('link[rel="icon"][type="image/svg+xml"]').getAttribute('href'),
+    ).toBe('favicon.svg');    expect(document.querySelector('.site-header')).not.toBeNull();
     expect(document.querySelector('.hero')).not.toBeNull();
     expect(document.querySelector('.trust')).not.toBeNull();
     expect(document.querySelector('.shop')).not.toBeNull();
