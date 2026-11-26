@@ -26,7 +26,9 @@ describe('static page shell', () => {
   it('includes the header, hero, trust strip, shop, and CMS link', () => {
     const document = loadPage('index.html');
 
-    expect(document.querySelector('.site-header')).not.toBeNull();
+    expect(
+      document.querySelector('link[rel="icon"]').getAttribute('href'),
+    ).toBe('favicon.png');    expect(document.querySelector('.site-header')).not.toBeNull();
     expect(document.querySelector('.hero')).not.toBeNull();
     expect(document.querySelector('.trust')).not.toBeNull();
     expect(document.querySelector('.shop')).not.toBeNull();
