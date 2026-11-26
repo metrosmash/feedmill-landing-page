@@ -32,10 +32,12 @@ describe('static page shell', () => {
     expect(document.querySelector('.shop')).not.toBeNull();
     expect(document.querySelector('[data-product-grid]')).not.toBeNull();
     expect(document.querySelector('[data-order-summary]')).not.toBeNull();
+    expect(document.querySelector('[data-checkout]')).not.toBeNull();
+    expect(document.querySelector('[data-confirmation]')).not.toBeNull();
     expect(document.querySelector('a[href="admin.html"]')).not.toBeNull();
   });
 
-  it('marks the admin stub noindex and keeps the demo notice', () => {
+  it('marks the admin noindex and keeps the demo notice', () => {
     const document = loadPage('admin.html');
 
     expect(document.querySelector('meta[name="robots"]').content).toContain(
@@ -43,5 +45,8 @@ describe('static page shell', () => {
     );
     expect(document.body.textContent).toContain('Independent concept demo');
     expect(document.body.textContent).toContain('not affiliated');
+    expect(document.querySelector('[data-admin-login]')).not.toBeNull();
+    expect(document.querySelector('[data-admin-panel="products"]')).not.toBeNull();
+    expect(document.querySelector('[data-admin-panel="orders"]')).not.toBeNull();
   });
 });

@@ -47,6 +47,14 @@ grid, the shell settings wiring, and the static page shell.
 - A single `Api` adapter with a `MockApi` implementation backed by
   `localStorage`, plus the documented future HTTP contract in
   [`docs/api-contract.md`](docs/api-contract.md).
+- Google-Form-style checkout with inline validation, adapter-side pricing,
+  order numbers (`FF-YYYYMMDD-NNN`), and a confirmation with bank-transfer
+  details and a WhatsApp button. Selections survive validation errors, and a
+  sold-out race shows a named banner and corrects the cart.
+- Owner CMS at `admin.html`: demo login (`feedmill2026`, session-scoped),
+  product add/edit/delete with image preview, sold-out toggle, an
+  orders table with detail view and status/payment editors, and JSON/CSV
+  exports. Destructive actions ask for confirmation in an accessible dialog.
 - Temporary SVG placeholders for Turkey and both palm oils. Licensed stock
   photos and credits arrive in the final packaging ticket.
 

@@ -18,30 +18,75 @@
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body class="admin-page">
-    <main class="container admin-stub">
-      <a class="brand" href="index.html" aria-label="Feedmill Farms home">
-        <span class="brand__mark" aria-hidden="true">FF</span>
-        <span class="brand__text">
-          <span class="brand__name">Feedmill Farms</span>
-          <span class="brand__tagline">Owner CMS</span>
-        </span>
-      </a>
+    <a class="skip-link" href="#admin-main">Skip to content</a>
 
-      <p class="eyebrow">Owner CMS</p>
-      <h1>The dashboard is being built.</h1>
-      <p class="admin-stub__lede">
-        Login, product management, orders, exports, settings, and the daily
-        digest arrive in the next tickets. For now, the storefront and its
-        seeded catalogue are ready to browse.
+    <header class="admin-header">
+      <div class="container admin-header__inner">
+        <a class="brand" href="index.html" aria-label="Feedmill Farms home">
+          <span class="brand__mark" aria-hidden="true">FF</span>
+          <span class="brand__text">
+            <span class="brand__name" data-brand>Feedmill Farms</span>
+            <span class="brand__tagline">Owner CMS</span>
+          </span>
+        </a>
+
+        <div class="admin-header__actions">
+          <a href="index.html">View shop</a>
+          <button type="button" data-admin-logout hidden>Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container admin-main" id="admin-main">
+      <p class="grid-status" data-admin-status role="status" aria-live="polite">
+        Loading the CMS&hellip;
       </p>
 
-      <p class="notice notice--demo">
-        <strong>Independent concept demo &mdash; not affiliated with any business.</strong>
-        Demo data only. The demo password will be <code>feedmill2026</code> and
-        is not real security.
-      </p>
+      <div data-admin-login></div>
 
-      <p><a class="button button--primary" href="index.html">Back to the shop</a></p>
+      <div data-admin-app hidden>
+        <p class="notice notice--demo">
+          <strong>Demo mode &mdash; changes stay in this browser only.</strong>
+          Products, orders, and settings are stored in this browser&rsquo;s
+          local storage. Nothing is sent anywhere.
+        </p>
+
+        <div class="admin-tabs" role="tablist" aria-label="CMS sections">
+          <button type="button" role="tab" data-admin-tab="products" aria-selected="true">
+            Products
+          </button>
+          <button type="button" role="tab" data-admin-tab="orders" aria-selected="false">
+            Orders
+          </button>
+          <button type="button" role="tab" data-admin-tab="settings" aria-selected="false">
+            Settings
+          </button>
+        </div>
+
+        <section data-admin-panel="products" role="tabpanel" aria-label="Products"></section>
+        <section data-admin-panel="orders" role="tabpanel" aria-label="Orders" hidden></section>
+        <section data-admin-panel="settings" role="tabpanel" aria-label="Settings" hidden>
+          <h2>Settings</h2>
+          <p>
+            Brand, contact, bank, delivery, and digest settings arrive in the
+            next ticket. The storefront already reads them from the seeded
+            catalogue.
+          </p>
+        </section>
+      </div>
     </main>
+
+    <footer class="admin-footer">
+      <div class="container">
+        <p>
+          <strong>Independent concept demo &mdash; not affiliated with any business.</strong>
+          Demo data only.
+        </p>
+      </div>
+    </footer>
+
+    <dialog class="admin-dialog" data-admin-dialog aria-labelledby="admin-dialog-title"></dialog>
+
+    <script type="module" src="js/admin.js"></script>
   </body>
 </html>
