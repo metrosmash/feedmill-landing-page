@@ -1,5 +1,5 @@
 import { createMockApi, DEMO_PASSWORD } from './api/index.js';
-import { validateProduct } from './domain/validation.js';
+import { validateProduct, validateSettings } from './domain/validation.js';
 import { formatNgn } from './domain/money.js';
 import { h } from './ui/dom.js';
 import { renderShell } from './ui/shell.js';
@@ -68,6 +68,7 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
   const panels = {
     products: root.querySelector('[data-admin-panel="products"]'),
     orders: root.querySelector('[data-admin-panel="orders"]'),
+    settings: root.querySelector('[data-admin-panel="settings"]'),
   };
   const tabs = [...root.querySelectorAll('[data-admin-tab]')];
 
@@ -76,8 +77,10 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
     tab: 'products',
     products: [],
     orders: [],
+    settings: null,
     loginError: '',
     notice: '',
+    settingsNotice: '',
   };
 
   const isAuthed = () => {
@@ -169,12 +172,14 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
   }
 
   async function refresh() {
-    const [products, orders] = await Promise.all([
+    const [products, orders, settings] = await Promise.all([
       api.listProducts(),
       api.listOrders(),
+      api.getSettings(),
     ]);
     state.products = products;
     state.orders = orders;
+    state.settings = settings;
   }
 
   function render() {
@@ -197,11 +202,11 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
     }
     panels.products.hidden = state.tab !== 'products';
     panels.orders.hidden = state.tab !== 'orders';
-    root.querySelector('[data-admin-panel="settings"]').hidden =
-      state.tab !== 'settings';
+    panels.settings.hidden = state.tab !== 'settings';
 
     renderProducts();
     renderOrders();
+    renderSettings();
   }
 
   function renderLogin() {
@@ -657,6 +662,174 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
           h('tbody', {}, ...rows),
         ),
       ),
+    );
+  }
+
+  // Settings -----------------------------------------------------------
+
+  const SETTINGS_FIELDS = [
+    { name: 'brandName', label: 'Brand name', type: 'text', required: true, maxlength: 60 },
+    { name: 'tagline', label: 'Tagline (optional)', type: 'text', maxlength: 120 },
+    { name: 'contactPhone', label: 'Contact phone', type: 'tel', required: true, hint: 'Shown in the footer; Nigerian format.' },
+    { name: 'whatsappNumber', label: 'WhatsApp number', type: 'tel', required: true },
+    { name: 'email', label: 'Email (optional)', type: 'email', maxlength: 120 },
+    { name: 'address', label: 'Address (optional)', type: 'text', maxlength: 200 },
+    { name: 'pickupAddress', label: 'Pickup address', type: 'text', required: true, maxlength: 200, hint: 'Shown on pickup confirmations.' },
+    { name: 'bankName', label: 'Bank name', type: 'text', required: true, maxlength: 60 },
+    { name: 'accountName', label: 'Account name', type: 'text', required: true, maxlength: 80 },
+    { name: 'accountNumber', label: 'Account number', type: 'text', required: true, inputmode: 'numeric', maxlength: 14, hint: 'Exactly 10 digits.' },
+    { name: 'deliveryFee', label: 'Delivery fee (₦)', type: 'number', required: true, min: 0, max: 100000, step: 1, hint: 'Applies to new delivery orders only.' },
+    { name: 'digestTime', label: 'Digest time', type: 'time', required: true },
+    { name: 'digestRecipient', label: 'Digest recipient', type: 'email', required: true, maxlength: 120 },
+  ];
+
+  function renderSettings() {
+    const settings = state.settings;
+    if (!settings) {
+      panels.settings.replaceChildren(h('p', { text: 'Settings are unavailable.' }));
+      return;
+    }
+
+    const inputs = {};
+    const fieldErrors = {};
+
+    const fields = SETTINGS_FIELDS.map((field) => {
+      const input = h('input', {
+        id: `settings-${field.name}`,
+        name: field.name,
+        type: field.type,
+        value: String(settings[field.name] ?? ''),
+        required: field.required === true,
+        ...(field.maxlength ? { maxlength: field.maxlength } : {}),
+        ...(field.min != null ? { min: field.min } : {}),
+        ...(field.max != null ? { max: field.max } : {}),
+        ...(field.step != null ? { step: field.step } : {}),
+        ...(field.inputmode ? { inputmode: field.inputmode } : {}),
+      });
+      input.addEventListener('input', () => {
+        input.removeAttribute('aria-invalid');
+        if (fieldErrors[field.name]) {
+          fieldErrors[field.name].textContent = '';
+          fieldErrors[field.name].hidden = true;
+        }
+      });
+      inputs[field.name] = input;
+      fieldErrors[field.name] = h('p', {
+        class: 'field-error',
+        id: `settings-${field.name}-error`,
+        hidden: true,
+      });
+      input.setAttribute('aria-describedby', `settings-${field.name}-error`);
+
+      return h(
+        'div',
+        { class: 'field' },
+        h(
+          'label',
+          { for: `settings-${field.name}` },
+          `${field.label}${field.required ? ' *' : ''}`,
+        ),
+        field.hint ? h('p', { class: 'field-hint', text: field.hint }) : null,
+        input,
+        fieldErrors[field.name],
+      );
+    });
+
+    const notesInput = h('textarea', {
+      id: 'settings-paymentInstructions',
+      name: 'paymentInstructions',
+      rows: 3,
+      maxlength: 500,
+    });
+    notesInput.value = settings.paymentInstructions ?? '';
+    notesInput.setAttribute('aria-describedby', 'settings-paymentInstructions-error');
+    inputs.paymentInstructions = notesInput;
+    fieldErrors.paymentInstructions = h('p', {
+      class: 'field-error',
+      id: 'settings-paymentInstructions-error',
+      hidden: true,
+    });
+
+    const feedback = h('p', {
+      class: 'admin-notice',
+      role: 'status',
+      hidden: !state.settingsNotice,
+      text: state.settingsNotice,
+    });
+
+    const form = h(
+      'form',
+      {
+        class: 'checkout-form',
+        novalidate: true,
+        onsubmit: async (event) => {
+          event.preventDefault();
+          const payload = {};
+          for (const field of SETTINGS_FIELDS) {
+            payload[field.name] =
+              field.type === 'number'
+                ? Number(inputs[field.name].value)
+                : inputs[field.name].value;
+          }
+          payload.paymentInstructions = inputs.paymentInstructions.value;
+
+          const { ok, errors } = validateSettings({ ...settings, ...payload });
+          for (const [name, node] of Object.entries(fieldErrors)) {
+            node.textContent = errors[name] ?? '';
+            node.hidden = !errors[name];
+            if (errors[name]) inputs[name]?.setAttribute('aria-invalid', 'true');
+            else inputs[name]?.removeAttribute('aria-invalid');
+          }
+          if (!ok) {
+            state.settingsNotice = '';
+            feedback.hidden = true;
+            const first = [...SETTINGS_FIELDS, { name: 'paymentInstructions' }].find(
+              (field) => errors[field.name],
+            );
+            inputs[first?.name]?.focus();
+            return;
+          }
+
+          try {
+            state.settings = await api.updateSettings(payload);
+            state.settingsNotice = 'Settings saved. The storefront shows them on its next load.';
+          } catch (error) {
+            const field = error.details?.field;
+            if (field && fieldErrors[field]) {
+              fieldErrors[field].textContent = error.message;
+              fieldErrors[field].hidden = false;
+              inputs[field]?.focus();
+              return;
+            }
+            state.settingsNotice = error.message || 'Could not save settings.';
+          }
+          render();
+          panels.settings.querySelector('.admin-notice')?.focus?.();
+        },
+      },
+      ...fields,
+      h(
+        'div',
+        { class: 'field' },
+        h('label', { for: 'settings-paymentInstructions', text: 'Payment instructions (optional)' }),
+        notesInput,
+        fieldErrors.paymentInstructions,
+      ),
+      feedback,
+      h('button', { type: 'submit', class: 'button button--primary', text: 'Save settings' }),
+    );
+
+    panels.settings.replaceChildren(
+      h(
+        'div',
+        { class: 'admin-section-head' },
+        h('h2', { text: 'Settings' }),
+      ),
+      h(
+        'p',
+        { class: 'field-hint', text: 'Changes apply to the storefront, checkout, and new orders. Past orders keep their snapshots.' },
+      ),
+      form,
     );
   }
 

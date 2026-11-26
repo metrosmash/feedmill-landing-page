@@ -4,6 +4,7 @@ import {
   normalisePhone,
   validateCustomer,
   validateProduct,
+  validateSettings,
 } from '../domain/validation.js';
 import { ApiError, NotImplementedError } from './errors.js';
 import { createSafeStorage } from './safe-storage.js';
@@ -533,7 +534,49 @@ export function createMockApi({
       return clone(readSettings());
     },
 
-    updateSettings: notImplemented('updateSettings'),
+    async updateSettings(patch = {}) {
+      const settings = readSettings();
+      const allowed = [
+        'brandName',
+        'tagline',
+        'logoUrl',
+        'contactPhone',
+        'whatsappNumber',
+        'email',
+        'address',
+        'pickupAddress',
+        'bankName',
+        'accountName',
+        'accountNumber',
+        'paymentInstructions',
+        'deliveryFee',
+        'digestTime',
+        'digestRecipient',
+      ];
+      const merged = { ...settings };
+      for (const key of allowed) {
+        if (patch[key] !== undefined) merged[key] = patch[key];
+      }
+      if (typeof merged.deliveryFee !== 'number') {
+        merged.deliveryFee = Number(merged.deliveryFee);
+      }
+
+      const { ok, errors } = validateSettings(merged);
+      if (!ok) {
+        const [field] = Object.keys(errors);
+        throw new ApiError('validation_error', errors[field], { field, errors });
+      }
+
+      for (const key of allowed) {
+        if (typeof merged[key] === 'string') merged[key] = merged[key].trim();
+      }
+      if (typeof merged.deliveryFee !== 'number' || Number.isNaN(merged.deliveryFee)) {
+        merged.deliveryFee = 0;
+      }
+
+      writeSlice(STORAGE_KEYS.settings, merged);
+      return clone(merged);
+    },
 
     // Exports (ticket 06).
     async exportOrders(format) {

@@ -55,6 +55,9 @@ grid, the shell settings wiring, and the static page shell.
   product add/edit/delete with image preview, sold-out toggle, an
   orders table with detail view and status/payment editors, and JSON/CSV
   exports. Destructive actions ask for confirmation in an accessible dialog.
+- Settings tab with validated brand, contact, bank, delivery-fee, and digest
+  fields; the storefront picks up saves live, including across open tabs.
+  Past orders keep their snapshots when fees change.
 - Temporary SVG placeholders for Turkey and both palm oils. Licensed stock
   photos and credits arrive in the final packaging ticket.
 

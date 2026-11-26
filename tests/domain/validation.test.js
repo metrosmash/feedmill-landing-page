@@ -6,7 +6,9 @@ import {
   normaliseWhatsapp,
   validateCustomer,
   validateProduct,
+  validateSettings,
 } from '../../js/domain/validation.js';
+import { seedSettings } from '../../js/data/seed.js';
 
 describe('phone validation', () => {
   it('accepts Nigerian mobile formats', () => {
@@ -117,5 +119,44 @@ describe('validateProduct', () => {
     expect(validateProduct({ ...valid, imageUrl: '' }).ok).toBe(true);
     expect(validateProduct({ ...valid, imageUrl: 'image/photo.jpg' }).ok).toBe(true);
     expect(validateProduct({ ...valid, imageUrl: 'https://example.com/x.jpg' }).ok).toBe(true);
+  });
+});
+
+describe('validateSettings', () => {
+  it('passes for the seed settings', () => {
+    expect(validateSettings(seedSettings)).toEqual({ ok: true, errors: {} });
+  });
+
+  it('rejects missing required fields and bad formats', () => {
+    const result = validateSettings({
+      ...seedSettings,
+      brandName: '',
+      contactPhone: '123',
+      whatsappNumber: 'abc',
+      accountNumber: '12345',
+      deliveryFee: -5,
+      digestTime: '25:00',
+      digestRecipient: 'not-an-email',
+    });
+
+    expect(result.ok).toBe(false);
+    expect(Object.keys(result.errors).sort()).toEqual([
+      'accountNumber',
+      'brandName',
+      'contactPhone',
+      'deliveryFee',
+      'digestRecipient',
+      'digestTime',
+      'whatsappNumber',
+    ]);
+  });
+
+  it('bounds the delivery fee and tolerates blank optionals', () => {
+    expect(validateSettings({ ...seedSettings, deliveryFee: 100001 }).ok).toBe(false);
+    expect(validateSettings({ ...seedSettings, deliveryFee: 100000 }).ok).toBe(true);
+    expect(
+      validateSettings({ ...seedSettings, tagline: '', email: '', paymentInstructions: '' }).ok,
+    ).toBe(true);
+    expect(validateSettings({ ...seedSettings, email: 'bad' }).ok).toBe(false);
   });
 });

@@ -1,3 +1,4 @@
+import { STORAGE_PREFIX } from './api/index.js';
 import {
   buildOrderSummary,
   changeQuantity,
@@ -307,6 +308,29 @@ export function mountStorefront({ api, root = document } = {}) {
   }
 
   store.subscribe(render);
+
+  /**
+   * Reload public data when another tab (e.g. the CMS) writes to storage,
+   * so brand, contact, bank, and delivery-fee changes appear live.
+   */
+  async function reload() {
+    try {
+      const [settings, products] = await Promise.all([
+        api.getPublicSettings(),
+        api.listProducts(),
+      ]);
+      store.setState((current) => ({ ...current, settings, products }));
+    } catch {
+      // Keep showing the current data if the reload fails.
+    }
+  }
+
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('storage', (event) => {
+      if (event.key && !event.key.startsWith(STORAGE_PREFIX)) return;
+      reload();
+    });
+  }
 
   const ready = (async () => {
     try {

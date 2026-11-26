@@ -157,3 +157,78 @@ export function normaliseWhatsapp(value) {
   if (digits.startsWith('0')) digits = `234${digits.slice(1)}`;
   return digits;
 }
+
+export const ACCOUNT_NUMBER_LENGTH = 10;
+export const DELIVERY_FEE_MIN = 0;
+export const DELIVERY_FEE_MAX = 100000;
+
+const DIGEST_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const SETTINGS_TEXT_BOUNDS = {
+  brandName: [2, 60],
+  tagline: [0, 120],
+  address: [0, 200],
+  pickupAddress: [5, 200],
+  bankName: [2, 60],
+  accountName: [2, 80],
+  paymentInstructions: [0, 500],
+  logoUrl: [0, 500],
+};
+
+/**
+ * Validate admin settings input (full object: merge the patch first).
+ *
+ * @param {Record<string, unknown>} input
+ * @returns {{ ok: boolean, errors: Record<string, string> }}
+ */
+export function validateSettings(input) {
+  const errors = {};
+
+  /**
+   * @param {string} name
+   * @returns {string}
+   */
+  function text(name) {
+    return String(input[name] ?? '').trim();
+  }
+
+  for (const [name, [min, max]] of Object.entries(SETTINGS_TEXT_BOUNDS)) {
+    const value = text(name);
+    if (value.length < min || value.length > max) {
+      const label = min === 0 ? `under ${max} characters` : `${min}–${max} characters`;
+      errors[name] = `Keep this ${label}.`;
+    }
+  }
+
+  if (!isValidPhone(text('contactPhone'))) {
+    errors.contactPhone = 'Enter a valid Nigerian phone number, e.g. 0803 123 4567.';
+  }
+
+  if (!isValidPhone(text('whatsappNumber'))) {
+    errors.whatsappNumber = 'Enter a valid Nigerian WhatsApp number.';
+  }
+
+  const email = text('email');
+  if (email.length > 0 && !isValidEmail(email)) {
+    errors.email = 'Enter a valid email address or leave it blank.';
+  }
+
+  if (!/^\d{10}$/.test(text('accountNumber').replace(/[\s\-]/g, ''))) {
+    errors.accountNumber = 'Account number must be exactly 10 digits.';
+  }
+
+  const deliveryFee = Number(input.deliveryFee);
+  if (!Number.isInteger(deliveryFee) || deliveryFee < DELIVERY_FEE_MIN || deliveryFee > DELIVERY_FEE_MAX) {
+    errors.deliveryFee = `Delivery fee must be a whole naira amount from ₦${DELIVERY_FEE_MIN.toLocaleString('en-NG')} to ₦${DELIVERY_FEE_MAX.toLocaleString('en-NG')}.`;
+  }
+
+  if (!DIGEST_TIME_PATTERN.test(text('digestTime'))) {
+    errors.digestTime = 'Digest time must be HH:MM in 24-hour format.';
+  }
+
+  if (!isValidEmail(text('digestRecipient'))) {
+    errors.digestRecipient = 'Enter a valid digest recipient email.';
+  }
+
+  return { ok: Object.keys(errors).length === 0, errors };
+}
