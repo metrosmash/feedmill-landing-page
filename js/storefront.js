@@ -63,6 +63,8 @@ export function mountStorefront({ api, root = document } = {}) {
 
   const grid = root.querySelector('[data-product-grid]');
   const status = root.querySelector('[data-grid-status]');
+  const retryWrap = root.querySelector('[data-retry-wrap]');
+  const retryButton = root.querySelector('[data-retry]');
   const summaryContainer = root.querySelector('[data-order-summary]');
   const checkoutContainer = root.querySelector('[data-checkout]');
   const confirmationContainer = root.querySelector('[data-confirmation]');
@@ -203,6 +205,8 @@ export function mountStorefront({ api, root = document } = {}) {
   function render(state) {
     if (state.settings) renderShell(state.settings, root);
 
+    if (retryWrap) retryWrap.hidden = true;
+
     if (state.status === 'loading') {
       if (status) {
         status.hidden = false;
@@ -217,8 +221,9 @@ export function mountStorefront({ api, root = document } = {}) {
         status.hidden = false;
         status.classList.add('grid-status--error');
         status.textContent =
-          'We could not load the shop. Please refresh the page.';
+          'We could not load the shop. Check your connection or device storage, then try again.';
       }
+      if (retryWrap) retryWrap.hidden = false;
       if (grid) grid.replaceChildren();
       return;
     }
@@ -309,30 +314,12 @@ export function mountStorefront({ api, root = document } = {}) {
 
   store.subscribe(render);
 
-  /**
-   * Reload public data when another tab (e.g. the CMS) writes to storage,
-   * so brand, contact, bank, and delivery-fee changes appear live.
-   */
-  async function reload() {
-    try {
-      const [settings, products] = await Promise.all([
-        api.getPublicSettings(),
-        api.listProducts(),
-      ]);
-      store.setState((current) => ({ ...current, settings, products }));
-    } catch {
-      // Keep showing the current data if the reload fails.
-    }
-  }
-
-  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-    window.addEventListener('storage', (event) => {
-      if (event.key && !event.key.startsWith(STORAGE_PREFIX)) return;
-      reload();
-    });
-  }
-
-  const ready = (async () => {
+  async function load() {
+    store.setState((current) =>
+      current.status === 'ready'
+        ? current
+        : { ...current, status: 'loading', error: null },
+    );
     try {
       const [settings, products] = await Promise.all([
         api.getPublicSettings(),
@@ -357,7 +344,38 @@ export function mountStorefront({ api, root = document } = {}) {
       console.error('Could not load the storefront', error);
       store.setState({ status: 'error', error });
     }
-  })();
+  }
+
+  /**
+   * Reload public data when another tab (e.g. the CMS) writes to storage,
+   * so brand, contact, bank, and delivery-fee changes appear live.
+   */
+  async function reload() {
+    try {
+      const [settings, products] = await Promise.all([
+        api.getPublicSettings(),
+        api.listProducts(),
+      ]);
+      store.setState((current) => ({ ...current, settings, products }));
+    } catch {
+      // Keep showing the current data if the reload fails.
+    }
+  }
+
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('storage', (event) => {
+      if (event.key && !event.key.startsWith(STORAGE_PREFIX)) return;
+      reload();
+    });
+  }
+
+  const ready = load();
+
+  if (retryButton) {
+    retryButton.addEventListener('click', () => {
+      load();
+    });
+  }
 
   return { store, ready, setQuantity, setFulfilment, submitCheckout, startNewOrder };
 }

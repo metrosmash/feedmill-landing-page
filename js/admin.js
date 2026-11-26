@@ -81,6 +81,7 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
     settings: null,
     digestPreview: null,
     digestNotice: '',
+    bootError: '',
     loginError: '',
     notice: '',
     settingsNotice: '',
@@ -231,6 +232,32 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
       { class: 'admin-login', 'aria-labelledby': 'admin-login-heading' },
       h('p', { class: 'eyebrow', text: 'Owner CMS' }),
       h('h1', { id: 'admin-login-heading', text: 'Sign in to manage the shop' }),
+      state.bootError
+        ? h(
+            'p',
+            { class: 'form-banner', role: 'alert' },
+            `${state.bootError} `,
+            h(
+              'button',
+              {
+                type: 'button',
+                class: 'button button--ghost button--small',
+                onclick: async () => {
+                  state.bootError = '';
+                  render();
+                  try {
+                    await refresh();
+                  } catch {
+                    state.bootError =
+                      'The CMS could not reach its data. Check device storage, then try again.';
+                  }
+                  render();
+                },
+              },
+              'Try again',
+            ),
+          )
+        : null,
       h(
         'p',
         { class: 'notice notice--demo' },
@@ -246,12 +273,19 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
             event.preventDefault();
             try {
               await api.login(password.value);
-              setAuthed(true);
-              state.loginError = '';
-              state.tab = 'products';
-              await refresh();
             } catch {
               state.loginError = 'That password is not correct. Hint: it is shown above.';
+              render();
+              return;
+            }
+            setAuthed(true);
+            state.loginError = '';
+            state.tab = 'products';
+            try {
+              await refresh();
+            } catch {
+              state.notice =
+                'Signed in, but the CMS could not reach its data. Check device storage, then sign out and back in to retry.';
             }
             render();
           },
@@ -361,6 +395,31 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
           'Add product',
         ),
       ),
+      state.bootError
+        ? h(
+            'p',
+            { class: 'form-banner', role: 'alert' },
+            `${state.bootError} `,
+            h(
+              'button',
+              {
+                type: 'button',
+                class: 'button button--ghost button--small',
+                onclick: async () => {
+                  state.bootError = '';
+                  try {
+                    await refresh();
+                  } catch {
+                    state.bootError =
+                      'The CMS could not reach its data. Check device storage, then try again.';
+                  }
+                  render();
+                },
+              },
+              'Try again',
+            ),
+          )
+        : null,
       state.notice ? h('p', { class: 'admin-notice', role: 'status', text: state.notice }) : null,
       h('ul', { class: 'admin-products' }, ...rows),
     );
@@ -919,6 +978,39 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
       h('button', { type: 'submit', class: 'button button--primary', text: 'Save settings' }),
     );
 
+    const dangerZone = h(
+      'div',
+      { class: 'danger-zone' },
+      h('h3', { text: 'Reset demo' }),
+      h(
+        'p',
+        { class: 'field-hint', text: 'Clear orders, products, and settings, then reseed the original catalogue. Garri will be sold out again.' },
+      ),
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'button button--danger-ghost',
+          onclick: async () => {
+            const confirmed = await confirmAction({
+              title: 'Reset demo data?',
+              message:
+                'Orders are cleared and products and settings return to the original seed. This cannot be undone.',
+              confirmLabel: 'Reset demo data',
+            });
+            if (!confirmed) return;
+            await api.resetDemo();
+            state.digestPreview = null;
+            state.digestNotice = '';
+            state.settingsNotice = 'Demo reset. The original catalogue and settings are back.';
+            await refresh();
+            render();
+          },
+        },
+        'Reset demo data',
+      ),
+    );
+
     panels.settings.replaceChildren(
       h(
         'div',
@@ -930,6 +1022,7 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
         { class: 'field-hint', text: 'Changes apply to the storefront, checkout, and new orders. Past orders keep their snapshots.' },
       ),
       form,
+      dangerZone,
     );
   }
 
@@ -1103,6 +1196,8 @@ export function mountAdmin({ api = createMockApi(), root = document } = {}) {
         await refresh();
       } catch (error) {
         console.error('Could not load the CMS', error);
+        state.bootError =
+          'The CMS could not reach its data. Check device storage, then try again.';
       }
     }
     render();

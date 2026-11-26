@@ -720,7 +720,12 @@ export function createMockApi({
     },
 
     // Demo lifecycle (ticket 09).
-    resetDemo: notImplemented('resetDemo'),
+    async resetDemo() {
+      safeStorage.clearNamespace(STORAGE_PREFIX);
+      writeSlice(STORAGE_KEYS.products, seed.products);
+      writeSlice(STORAGE_KEYS.settings, seed.settings);
+      writeSlice(STORAGE_KEYS.orders, []);
+    },
 
     // Exposed for diagnostics and future tickets.
     now,

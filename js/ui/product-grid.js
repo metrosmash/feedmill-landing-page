@@ -126,6 +126,16 @@ export function renderProductGrid(products, container, quantities = {}) {
     );
   });
   container.append(fragment);
+
+  if (products.length > 0 && products.every((product) => product.available === false)) {
+    container.append(
+      h('p', {
+        class: 'soldout-note',
+        role: 'status',
+        text: 'Everything is sold out right now — check back soon.',
+      }),
+    );
+  }
 }
 
 /**

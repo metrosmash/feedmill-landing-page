@@ -165,15 +165,6 @@ describe('MockApi contract: public reads', () => {
     }
   });
 
-  it('rejects unbuilt methods with a typed not_implemented error', async () => {
-    const api = createMockApi();
-
-    await expect(api.resetDemo()).rejects.toMatchObject({
-      name: 'NotImplementedError',
-      code: 'not_implemented',
-    });
-  });
-
   it('wraps unavailable storage in a typed storage error', async () => {
     const api = createMockApi({
       storage: {
